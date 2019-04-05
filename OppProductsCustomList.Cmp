@@ -1,0 +1,35 @@
+<aura:component implements='flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId' access='global' controller='OppProductCustomListCtrl'>
+
+    <aura:attribute name='data' type='List' />
+    <aura:attribute name='noData' type='String' default='No Opportunity Products could be found on this Opportunity!' />
+    <aura:attribute name='columns' type='Object' />
+    <aura:attribute name='cardTitle' type='Object'>
+        <h2>
+            <b>Products with Margin Data</b>
+        </h2>
+    </aura:attribute>
+
+    <aura:handler name='init' value='{!this}' action='{!c.init}' />
+
+    <article aura:id='gridContainer' class='slds-card slds-card_boundary'>
+        <lightning:card title='{!v.cardTitle}' iconName='standard:product'>
+                <div class='slds-card__body slds-grid'>
+                    <aura:if isTrue='{!not(empty(v.data))}' >
+                        <lightning:datatable aura:id='ltngTable' id='ltngDatatable' keyField='oppProduct_entry'
+                                data='{!v.data}'
+                                columns='{!v.columns}'
+                                hideCheckboxColumn='true'
+                                sortable='false'
+                                resizeColumnDisabled='true'
+                                suppressBottomBar='false'
+                                onsave='{!c.onSave}'>
+                        </lightning:datatable>
+                    </aura:if>
+                    <aura:if isTrue='{!empty(v.data)}' >
+                        <p class='slds-p-horizontal_small'>{!v.noData}</p>
+                    </aura:if>
+                </div>
+        </lightning:card>
+    </article>
+
+</aura:component>

@@ -1,0 +1,11 @@
+({
+
+    init : function(component, event, helper) {
+        helper.init(component, event, helper);
+    },
+
+    onSave : function(component, event, helper) {
+        helper.onSave(component, event, helper);
+    }
+
+})

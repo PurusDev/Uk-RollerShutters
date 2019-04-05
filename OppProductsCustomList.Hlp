@@ -1,0 +1,103 @@
+({
+
+    init : function(component, event, helper) {
+        var action = component.get('c.getOppProducts');
+        
+        action.setParams({
+           oppId: component.get('v.recordId') 
+        });
+
+        action.setCallback(this, function(response) {
+           var state = response.getState();
+           
+           if (state === 'SUCCESS') {
+               helper.setColumns(component);
+               component.set('v.data', response.getReturnValue());
+           } else {
+               helper.showToast('Error!', 'error', 'Couldn\'t get Opportunity Products!');
+           }
+        });
+
+        $A.enqueueAction(action);
+    },
+
+    setColumns : function(component) {
+        component.set('v.columns', [
+            { label: 'Product', fieldName: 'link', type: 'url', typeAttributes: { label: { fieldName: 'prodName' }, tooltip: { fieldName: 'prodName' } }, cellAttributes: { alignment: 'left' } },
+            // { label: 'Quantity', fieldName: 'Quantity', type: 'number', typeAttributes: { minimumFractionDigits: 2, maximumFractionDigits: 2 }, cellAttributes: { alignment: 'left' } },
+            { label: 'Sales Price', editable: true, fieldName: 'salesPrice', type: 'currency', cellAttributes: { alignment: 'left' } },
+            { label: 'Purchase Price', editable: true, fieldName: 'purchasePrice', type: 'currency', cellAttributes: { alignment: 'left' } },
+            { label: 'Margin', fieldName: 'margin', type: 'number', cellAttributes: { alignment: 'left' }, typeAttributes: { minimumFractionDigits: 2 } },
+            { label: 'ROI', fieldName: 'roi', type: 'percent', typeAttributes: { minimumFractionDigits: 2, maximumFractionDigits: 2 }, cellAttributes: { alignment: 'left' } },
+        ]);
+    },
+
+    onSave : function(component, event, helper) {
+        var editedRecords = component.find('ltngTable').get('v.draftValues');
+        var entriesToUpdate = [];
+        var oppItemsToUpdate = [];
+        
+        editedRecords.forEach(record => {
+            var ids = record.oppProduct_entry.split(':');
+            var oppItemId = ids[0];
+            var entryId = ids[1];
+            
+            if (record.salesPrice !== undefined) {
+                oppItemsToUpdate.push( { Id: oppItemId, UnitPrice: record.salesPrice } );
+            }
+
+            if (record.purchasePrice !== undefined) {
+                entriesToUpdate.push( { Id: entryId, Purchase_Price__c: record.purchasePrice } );
+            }
+        });
+
+        var actionEntries = component.get('c.updateEntriesAndOpportunityProducts');
+
+        actionEntries.setParams({
+            entries: JSON.stringify(entriesToUpdate),
+            oppItems: JSON.stringify(oppItemsToUpdate)
+        });
+
+        actionEntries.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === 'SUCCESS') {
+                if (!response.getReturnValue()) {
+                    helper.showToast('Error!', 'error', 'Server error has occurred when updating Pricebook Entries!');
+                } else {
+                    helper.showToast('Success!', 'success', 'Updated successfully!');
+                    helper.refreshView();
+                    helper.init(component, event, helper);
+                }
+            } else {
+                helper.showToast('Error!', 'error', 'Server error has occurred when updating Pricebook Entries!');
+            }
+        });
+
+        $A.enqueueAction(actionEntries);
+    },
+
+    showToast : function(titleParam, typeParam, messageParam){
+        var toastEvent = $A.get("e.force:showToast");
+
+        if(toastEvent){
+            toastEvent.setParams({
+                title: titleParam,
+                type: typeParam,
+                message: messageParam
+            });
+
+            toastEvent.fire();
+        } else {
+            alert(params.message);
+        }
+    },
+
+    refreshView : function() {
+        var refreshEvent = $A.get("e.force:refreshView");
+
+        if(refreshEvent) {
+            refreshEvent.fire();
+        }
+    }
+
+})
